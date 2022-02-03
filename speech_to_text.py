@@ -176,7 +176,7 @@ def main(aggressiveness,path_to_wav,directory_to_place_wav):
     print(timestamp_dict)
 
     final_text = []
-    path_to_chunk = "./" + "Chunk/"
+    path_to_chunk = "./" + str(directory_to_place_wav)
     pathlist = Path(path_to_chunk).rglob('*.wav')
     pathlist = sorted(pathlist)
     for path in pathlist:

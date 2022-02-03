@@ -6,5 +6,10 @@ This is auto subtitle script made using python and wav2vec2.0 pretrained by aire
 python3 -m venv venv
 source venv/bin/activate
 pip install pydub ffmpeg webrtcvad torch transformers srt
-python speech_to_text.py
+```
+
+# How to use
+Please activate venv before using this script
+```python
+python speech_to_text.py <aggresiveness> <path_to_wav_file> <path_to_directory_to_place_wav>
 ```
