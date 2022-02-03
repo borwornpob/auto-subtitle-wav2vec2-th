@@ -175,39 +175,42 @@ def main(aggressiveness,path_to_wav,directory_to_place_wav):
         j = j+1
     print(timestamp_dict)
 
-#Segmenting
-main(3,'Test2.wav','Chunk/')
+    final_text = []
+    path_to_chunk = "./" + "Chunk/"
+    pathlist = Path(path_to_chunk).rglob('*.wav')
+    pathlist = sorted(pathlist)
+    for path in pathlist:
+    path_in_str = str(path)
+    clip = AudioSegment.from_wav(path_in_str)
+    clip = clip.set_frame_rate(16000)
+    x = torch.FloatTensor(clip.get_array_of_samples())
+    inputs = processor(x, sampling_rate = 16000, return_tensors='pt', padding = True).input_values
+    with torch.no_grad():
+        logits = model(inputs).logits
+    token = torch.argmax(logits, dim=-1)
+    text = processor.batch_decode(token)
+    print(text[0].replace(" ", ""))
+    final_text.append(text[0].replace(" ",""))
 
-final_text = []
-path_to_chunk = "./" + "Chunk/"
-pathlist = Path(path_to_chunk).rglob('*.wav')
-pathlist = sorted(pathlist)
-for path in pathlist:
-  path_in_str = str(path)
-  clip = AudioSegment.from_wav(path_in_str)
-  clip = clip.set_frame_rate(16000)
-  x = torch.FloatTensor(clip.get_array_of_samples())
-  inputs = processor(x, sampling_rate = 16000, return_tensors='pt', padding = True).input_values
-  with torch.no_grad():
-    logits = model(inputs).logits
-  token = torch.argmax(logits, dim=-1)
-  text = processor.batch_decode(token)
-  print(text[0].replace(" ", ""))
-  final_text.append(text[0].replace(" ",""))
+    srt_array = []
 
-srt_array = []
+    for i in range(len(final_text)):
+        start = timedelta(seconds = timestamp_dict[i]['start'])
+        end = timedelta(seconds = timestamp_dict[i]['end'])
+        srt_array.append(srt.Subtitle(index = i+1, start = start, end = end, content = final_text[i]))
 
+    print(srt_array)
 
-for i in range(len(final_text)):
-    start = timedelta(seconds = timestamp_dict[i]['start'])
-    end = timedelta(seconds = timestamp_dict[i]['end'])
-    srt_array.append(srt.Subtitle(index = i+1, start = start, end = end, content = final_text[i]))
+    srt = srt.compose(srt_array)
+    print(srt)
 
-print(srt_array)
+    f = open('result.srt',"w")
+    f.write(srt)
+    f.close()
 
-srt = srt.compose(srt_array)
-print(srt)
-
-f = open('test.srt',"w")
-f.write(srt)
-f.close()
+if __name__ = '__main__':
+    args = sys.argv[1:]
+    agg = args[0]
+    path_wav = args[1]
+    directory_wav = args[2]
+    main(agg,path_wav,directory_wav)
