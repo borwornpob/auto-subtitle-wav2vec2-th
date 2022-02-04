@@ -155,10 +155,10 @@ def vad_collector(sample_rate, frame_duration_ms,
 
 timestamp_dict = {}
 
-def main(aggressiveness,path_to_wav,directory_to_place_wav):
+def main(aggressiveness,path_to_wav,directory_to_place_srt,srt_file_name):
     audio, sample_rate = read_wave(path_to_wav)
     vad = webrtcvad.Vad(int(aggressiveness))
-    path_directory = str(directory_to_place_wav)
+    path_directory = 'Chunk/'
     frames = frame_generator(30, audio, sample_rate)
     frames = list(frames)
     segments = vad_collector(sample_rate, 30, 300, vad, frames)
@@ -176,21 +176,21 @@ def main(aggressiveness,path_to_wav,directory_to_place_wav):
     print(timestamp_dict)
 
     final_text = []
-    path_to_chunk = "./" + str(directory_to_place_wav)
+    path_to_chunk = "./" + path_directory
     pathlist = Path(path_to_chunk).rglob('*.wav')
     pathlist = sorted(pathlist)
     for path in pathlist:
-    path_in_str = str(path)
-    clip = AudioSegment.from_wav(path_in_str)
-    clip = clip.set_frame_rate(16000)
-    x = torch.FloatTensor(clip.get_array_of_samples())
-    inputs = processor(x, sampling_rate = 16000, return_tensors='pt', padding = True).input_values
-    with torch.no_grad():
-        logits = model(inputs).logits
-    token = torch.argmax(logits, dim=-1)
-    text = processor.batch_decode(token)
-    print(text[0].replace(" ", ""))
-    final_text.append(text[0].replace(" ",""))
+        path_in_str = str(path)
+        clip = AudioSegment.from_wav(path_in_str)
+        clip = clip.set_frame_rate(16000)
+        x = torch.FloatTensor(clip.get_array_of_samples())
+        inputs = processor(x, sampling_rate = 16000, return_tensors='pt', padding = True).input_values
+        with torch.no_grad():
+            logits = model(inputs).logits
+        token = torch.argmax(logits, dim=-1)
+        text = processor.batch_decode(token)
+        print(text[0].replace(" ", ""))
+        final_text.append(text[0].replace(" ",""))
 
     srt_array = []
 
@@ -201,16 +201,17 @@ def main(aggressiveness,path_to_wav,directory_to_place_wav):
 
     print(srt_array)
 
-    srt = srt.compose(srt_array)
-    print(srt)
-
-    f = open('result.srt',"w")
-    f.write(srt)
+    srt_ob = srt.compose(srt_array)
+    print(srt_ob)
+    path_srt = str(directory_to_place_srt);
+    f = open(path_srt + srt_file_name + '.srt',"w")
+    f.write(srt_ob)
     f.close()
 
-if __name__ = '__main__':
+if __name__ == '__main__':
     args = sys.argv[1:]
     agg = args[0]
     path_wav = args[1]
-    directory_wav = args[2]
-    main(agg,path_wav,directory_wav)
+    directory_to_place_srt = args[2]
+    srt_file_name = args[3]
+    main(agg,path_wav,directory_to_place_srt,srt_file_name)
