@@ -4,12 +4,12 @@ This is auto subtitle script made using python and wav2vec2.0 pretrained by aire
 # Installation
 ```python
 python3 -m venv venv
-source venv/bin/activate
+. venv/bin/activate
 pip install pydub ffmpeg webrtcvad torch transformers srt
 ```
 
 # How to use
 Please activate venv before using this script
 ```python
-python speech_to_text.py <aggresiveness> <path_to_wav_file> <path_to_directory_to_place_wav>
+python speech_to_text.py <aggresiveness> <path_to_wav_file> <directory_to_place_subtitle_file> <subtitle_file_name>
 ```
