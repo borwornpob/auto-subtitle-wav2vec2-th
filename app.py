@@ -9,12 +9,16 @@ from rq import Queue
 from rq.job import Job
 from worker import conn
 
+from flask_cors import CORS, cross_origin
+
 from speech_to_text import main
 
 UPLOAD_FOLDER = './Upload'
 ALLOWED_EXTENSIONS = {'wav'}
 
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 q = Queue(connection=conn)
@@ -26,34 +30,27 @@ def allowed_file(filename):
 
 
 #Main route
-@app.route('/', methods = ['GET','POST'])
+@app.route('/predict', methods = ['POST'])
+@cross_origin()
 def predict():
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            flash('No file part')
-            return redirect(request.url)
-        file = request.files['file']
-        if file.filename == '':
-            flash('No selected file')
-            return redirect(request.url)
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            path_to_file = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(path_to_file)
-            name_without_extension = filename.rsplit('.',1)[0]
-            job = q.enqueue(main, 3, path_to_file, name_without_extension,)
-            print(job.get_id())
-    return '''
-    <!doctype html>
-    <title>Upload new File</title>
-    <h1>Upload new File</h1>
-    <form method=post enctype=multipart/form-data>
-        <input type=file name=file>
-        <input type=submit value=Upload>
-    </form>
-    '''
+    if 'file' not in request.files:
+        flash('No file part')
+        return redirect(request.url)
+    file = request.files['file']
+    if file.filename == '':
+        flash('No selected file')
+        return redirect(request.url)
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        path_to_file = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(path_to_file)
+        name_without_extension = filename.rsplit('.',1)[0]
+        job = q.enqueue(main, 3, path_to_file, name_without_extension,)
+        print(job.get_id())
+        return {"message": job.get_id()}, 201
 
 @app.route('/download/<job_key>', methods=['GET'])
+@cross_origin()
 def download_file(job_key):
 
     job = Job.fetch(job_key, connection=conn)
