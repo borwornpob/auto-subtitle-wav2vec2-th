@@ -1,10 +1,12 @@
 import React from "react";
 import "./upload.css";
 
+let apiTimeout;
+
 class UploadFile extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { file: "", msg: "" };
+    this.state = { file: "", msg: "", jobID: "" };
   }
 
   onFileChange = (event) => {
@@ -14,6 +16,27 @@ class UploadFile extends React.Component {
   };
 
   uploadFileData = (event) => {
+    let fetchResult = (JobID) => {
+      console.log("firing api with JobID: " + JobID);
+      fetch("http://127.0.0.1:5000/download/" + JobID).then((res) => {
+        if (res.status === 202) {
+          this.setState({ msg: "Processing..." });
+          apiTimeout = setTimeout(fetchResult(this.state.jobID), 10000);
+        } else if (res.status === 200) {
+          clearInterval(apiTimeout);
+          this.setState({ msg: "Downloading file" });
+          let blob = res.blob();
+          const url = window.URL.createObjectURL(new Blob([blob]));
+          const link = document.createElement("a");
+          link.href = url;
+          link.setAttribute("download", "subtitle.srt");
+          document.body.appendChild(link);
+          link.click();
+          link.parentNode.removeChild(link);
+        }
+      });
+    };
+
     event.preventDefault();
     this.setState({ msg: "" });
 
@@ -27,7 +50,11 @@ class UploadFile extends React.Component {
     })
       .then((res) => res.json())
       .then((json) => {
-        this.setState({ msg: json.message });
+        this.setState({ jobID: json.message });
+        console.log(this.state.jobID);
+      })
+      .then(() => {
+        setTimeout(fetchResult(this.state.jobID), 10000);
       });
   };
 
@@ -36,7 +63,7 @@ class UploadFile extends React.Component {
       <div id="container">
         <h1>File Upload Example using React</h1>
         <h3>Upload a File</h3>
-        <h4>Job-id: {this.state.msg}</h4>
+        <h4>Status: {this.state.msg}</h4>
         <input onChange={this.onFileChange} type="file"></input>
         <button disabled={!this.state.file} onClick={this.uploadFileData}>
           Upload
