@@ -18,8 +18,6 @@ processor = AutoProcessor.from_pretrained("airesearch/wav2vec2-large-xlsr-53-th"
 model = AutoModelForCTC.from_pretrained("airesearch/wav2vec2-large-xlsr-53-th")
 
 #Segmentation audio wav using py-webrtcvad
-timestamp_array = []
-
 def read_wave(path):
     """Reads a .wav file.
 
@@ -75,7 +73,7 @@ def frame_generator(frame_duration_ms, audio, sample_rate):
 
 
 def vad_collector(sample_rate, frame_duration_ms,
-                  padding_duration_ms, vad, frames):
+                  padding_duration_ms, vad, frames, timestamp_array):
     """Filters out non-voiced audio frames.
 
     Given a webrtcvad.Vad and a source of audio frames, yields only
@@ -153,15 +151,15 @@ def vad_collector(sample_rate, frame_duration_ms,
     if voiced_frames:
         yield b''.join([f.bytes for f in voiced_frames])
 
-timestamp_dict = {}
-
 def main(aggressiveness,path_to_wav,directory_to_place_srt,srt_file_name):
+    timestamp_array = []
+    timestamp_dict = {}
     audio, sample_rate = read_wave(path_to_wav)
     vad = webrtcvad.Vad(int(aggressiveness))
     path_directory = 'Chunk/'
     frames = frame_generator(30, audio, sample_rate)
     frames = list(frames)
-    segments = vad_collector(sample_rate, 30, 300, vad, frames)
+    segments = vad_collector(sample_rate, 30, 300, vad, frames, timestamp_array)
     os.system('mkdir ' + path_directory)
     for i, segment in enumerate(segments):
         path = 'chunk-%002d.wav' % (i,)
@@ -208,10 +206,12 @@ def main(aggressiveness,path_to_wav,directory_to_place_srt,srt_file_name):
     f.write(srt_ob)
     f.close()
 
-if __name__ == '__main__':
-    args = sys.argv[1:]
-    agg = args[0]
-    path_wav = args[1]
-    directory_to_place_srt = args[2]
-    srt_file_name = args[3]
-    main(agg,path_wav,directory_to_place_srt,srt_file_name)
+    
+
+# if __name__ == '__main__':
+#     args = sys.argv[1:]
+#     agg = args[0]
+#     path_wav = args[1]
+#     directory_to_place_srt = args[2]
+#     srt_file_name = args[3]
+#     main(agg,path_wav,directory_to_place_srt,srt_file_name)

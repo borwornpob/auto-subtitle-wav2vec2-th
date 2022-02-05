@@ -2,3 +2,5 @@
 /venv
 /result
 /chunk
+/__pycache__
+/Upload
