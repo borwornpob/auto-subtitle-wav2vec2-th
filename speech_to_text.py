@@ -12,6 +12,8 @@ from transformers import AutoProcessor, AutoModelForCTC
 import srt
 from datetime import timedelta
 
+from structure_maker import StructureMaker
+
 #import model
 processor = AutoProcessor.from_pretrained("airesearch/wav2vec2-large-xlsr-53-th")
 
@@ -151,16 +153,16 @@ def vad_collector(sample_rate, frame_duration_ms,
     if voiced_frames:
         yield b''.join([f.bytes for f in voiced_frames])
 
-def main(aggressiveness,path_to_wav,directory_to_place_srt,srt_file_name):
+def main(aggressiveness,path_to_wav,srt_file_name):
     timestamp_array = []
     timestamp_dict = {}
     audio, sample_rate = read_wave(path_to_wav)
     vad = webrtcvad.Vad(int(aggressiveness))
-    path_directory = 'Chunk/'
+    random_directory = StructureMaker()
+    path_directory = random_directory + '/Chunk/' 
     frames = frame_generator(30, audio, sample_rate)
     frames = list(frames)
     segments = vad_collector(sample_rate, 30, 300, vad, frames, timestamp_array)
-    os.system('mkdir ' + path_directory)
     for i, segment in enumerate(segments):
         path = 'chunk-%002d.wav' % (i,)
         print(' Writing %s' % (path,))
@@ -199,12 +201,15 @@ def main(aggressiveness,path_to_wav,directory_to_place_srt,srt_file_name):
 
     print(srt_array)
 
+    directory_to_place_srt = random_directory + '/result/'
     srt_ob = srt.compose(srt_array)
     print(srt_ob)
-    path_srt = str(directory_to_place_srt);
-    f = open(path_srt + srt_file_name + '.srt',"w")
+    srt_path = directory_to_place_srt + srt_file_name + '.srt'
+    f = open(srt_path,"w")
     f.write(srt_ob)
     f.close()
+
+    return srt_path
 
     
 

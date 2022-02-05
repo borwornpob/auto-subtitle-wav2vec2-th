@@ -1,17 +1,23 @@
 from crypt import methods
 from fileinput import filename
+from multiprocessing import connection
 import os
-from flask import Flask, request, jsonify, flash, redirect, url_for, send_from_directory
+from flask import Flask, request, jsonify, flash, redirect, send_file, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 
+from rq import Queue
+from rq.job import Job
+from worker import conn
 
-import speech_to_text
+from speech_to_text import main
 
 UPLOAD_FOLDER = './Upload'
 ALLOWED_EXTENSIONS = {'wav'}
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+q = Queue(connection=conn)
 
 #TODO: support more extensions
 def allowed_file(filename):
@@ -31,17 +37,12 @@ def predict():
             flash('No selected file')
             return redirect(request.url)
         if file and allowed_file(file.filename):
-            os.system('rm -r Chunk/')
-            os.system('rm result/*')
-            os.system('rm Upload/*')
             filename = secure_filename(file.filename)
             path_to_file = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(path_to_file)
-            os.system('rm -rf Chunk/')
             name_without_extension = filename.rsplit('.',1)[0]
-            name_srt = name_without_extension + '.srt'
-            speech_to_text.main(3, path_to_file, 'result/', name_without_extension)
-            return redirect(url_for('download_file', name=name_srt))
+            job = q.enqueue(main, 3, path_to_file, name_without_extension,)
+            print(job.get_id())
     return '''
     <!doctype html>
     <title>Upload new File</title>
@@ -52,14 +53,13 @@ def predict():
     </form>
     '''
 
-@app.route('/download/<name>')
-def download_file(name):
-    try:
-        return send_from_directory('./result/', name)
-    except:
-        flash({'error': 'error while downloading file'})
+@app.route('/download/<job_key>', methods=['GET'])
+def download_file(job_key):
 
-app.add_url_rule(
-    "/download/<name>", endpoint="download_file", build_only=True
-)
+    job = Job.fetch(job_key, connection=conn)
+
+    if job.is_finished:
+        return send_file(job.result, as_attachment=True), 200
+    else:
+        return jsonify({'message':'Not finished yet or has an error Please wait till 5000 seconds'}), 202
 
