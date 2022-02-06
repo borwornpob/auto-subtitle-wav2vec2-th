@@ -4,7 +4,7 @@ import "./upload.css";
 class UploadFile extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { file: "", msg: "", jobID: "" };
+    this.state = { file: "", msg: "", jobID: "", key: "" };
   }
 
   onFileChange = (event) => {
@@ -12,6 +12,12 @@ class UploadFile extends React.Component {
       file: event.target.files[0],
     });
   };
+
+  resetFileInput() {
+    let randomString = Math.random().toString(36);
+
+    this.setState({ key: randomString });
+  }
 
   sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -28,6 +34,10 @@ class UploadFile extends React.Component {
           this.setState({ msg: "Downloading file" });
           //   fetch("http://127.0.0.1:5000/download/" + JobID);
           window.location.href = "http://127.0.0.1:5000/download/" + JobID;
+          this.sleep(2000).then(() => {
+            this.setState({ file: "", msg: "Ready", jobID: "" });
+            this.resetFileInput();
+          });
           // let blob = res.blob();
           // const url = window.URL.createObjectURL(new Blob([blob]));
           // const link = document.createElement("a");
@@ -64,10 +74,14 @@ class UploadFile extends React.Component {
   render() {
     return (
       <div id="container">
-        <h1>File Upload Example using React</h1>
-        <h3>Upload a File</h3>
+        <h1>Auto Subitlte Created by Firstzazx</h1>
+        <h3>Upload a File (Only wav)</h3>
         <h4>Status: {this.state.msg}</h4>
-        <input onChange={this.onFileChange} type="file"></input>
+        <input
+          onChange={this.onFileChange}
+          type="file"
+          key={this.state.key || ""}
+        />
         <button disabled={!this.state.file} onClick={this.uploadFileData}>
           Upload
         </button>
