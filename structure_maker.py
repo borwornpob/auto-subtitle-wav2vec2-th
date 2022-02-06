@@ -7,6 +7,7 @@ N = 8
 
 def StructureMaker():
     directory = ''.join(random.choices(string.ascii_uppercase + string.digits, k=N))
+    directory = 'data/' + directory;
     os.system('mkdir ' + directory)
     os.system('mkdir ' + directory + '/Chunk')
     os.system('mkdir ' + directory + '/result')

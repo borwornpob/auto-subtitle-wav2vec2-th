@@ -1,8 +1,6 @@
 import React from "react";
 import "./upload.css";
 
-let apiTimeout;
-
 class UploadFile extends React.Component {
   constructor(props) {
     super(props);
@@ -15,24 +13,29 @@ class UploadFile extends React.Component {
     });
   };
 
+  sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   uploadFileData = (event) => {
     let fetchResult = (JobID) => {
       console.log("firing api with JobID: " + JobID);
       fetch("http://127.0.0.1:5000/download/" + JobID).then((res) => {
         if (res.status === 202) {
           this.setState({ msg: "Processing..." });
-          apiTimeout = setTimeout(fetchResult(this.state.jobID), 10000);
+          this.sleep(2000).then(() => fetchResult(this.state.jobID));
         } else if (res.status === 200) {
-          clearInterval(apiTimeout);
           this.setState({ msg: "Downloading file" });
-          let blob = res.blob();
-          const url = window.URL.createObjectURL(new Blob([blob]));
-          const link = document.createElement("a");
-          link.href = url;
-          link.setAttribute("download", "subtitle.srt");
-          document.body.appendChild(link);
-          link.click();
-          link.parentNode.removeChild(link);
+          //   fetch("http://127.0.0.1:5000/download/" + JobID);
+          window.location.href = "http://127.0.0.1:5000/download/" + JobID;
+          // let blob = res.blob();
+          // const url = window.URL.createObjectURL(new Blob([blob]));
+          // const link = document.createElement("a");
+          // link.href = url;
+          // link.setAttribute("download", "subtitle.srt");
+          // document.body.appendChild(link);
+          // link.click();
+          // link.parentNode.removeChild(link);
         }
       });
     };
@@ -54,7 +57,7 @@ class UploadFile extends React.Component {
         console.log(this.state.jobID);
       })
       .then(() => {
-        setTimeout(fetchResult(this.state.jobID), 10000);
+        fetchResult(this.state.jobID);
       });
   };
 
