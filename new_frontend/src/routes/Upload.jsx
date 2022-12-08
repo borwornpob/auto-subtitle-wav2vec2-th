@@ -63,12 +63,12 @@ export default function Upload() {
     fetch("http://127.0.0.1:5000/download/" + jobId)
       .then((res) => {
         if (res.status === 202) {
-          setMsg("Turning your wav into Thai Subitles");
+          setMsg("Turning your wav into Thai Subtitle...");
           sleep(2000).then(() => {
             fetchResult(jobId);
           });
         } else if (res.status === 200) {
-          setMsg("Your Subtitles are ready!");
+          setMsg("Your Subtitle is ready!");
           window.open("http://127.0.0.1:5000/download/" + jobId, "_blank");
           sleep(2000).then(() => {
             setMsg("");
@@ -88,8 +88,8 @@ export default function Upload() {
       <Heading fontSize="4xl" mt={2}>
         Thai Subtitle Generator
       </Heading>
-      <Text fontSize="2xl">Upload your wav file</Text>
-      <VStack spacing={4}>
+      <Text fontSize="2xl">Upload your wav file to generate Subtitle </Text>
+      <VStack spacing={4} mt={3}>
         <Input
           type={"file"}
           key={key}
